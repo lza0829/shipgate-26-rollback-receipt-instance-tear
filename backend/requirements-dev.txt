@@ -1,0 +1,4 @@
+# 本地/CI 测试依赖，不进运行镜像（Dockerfile 只安装 requirements.txt）
+-r requirements.txt
+httpx==0.28.1
+pytest==9.2.0
