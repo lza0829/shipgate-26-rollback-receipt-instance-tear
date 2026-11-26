@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api'
 
-const surface_panel = true
 export default function Overview() {
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
@@ -33,6 +32,12 @@ export default function Overview() {
         <div className={`stat${exposed.涉及发版单数 > 0 ? ' stat-warn' : ' stat-ok'}`}>
           <div className="n">{exposed.涉及发版单数}</div><div className="l">涉及回滚中发版单数</div>
         </div>
+        <div className={`stat${(exposed.缺口实例数 || 0) > 0 ? ' stat-danger' : ' stat-ok'}`}>
+          <div className="n">{exposed.缺口实例数 || 0}</div><div className="l">缺口实例数(在跑旧版本)</div>
+        </div>
+        <div className={`stat${(exposed.已回滚仍有缺口单数 || 0) > 0 ? ' stat-danger' : ' stat-ok'}`}>
+          <div className="n">{exposed.已回滚仍有缺口单数 || 0}</div><div className="l">已回滚仍有缺口(假干净)</div>
+        </div>
       </div>
       <div className="table-wrap">
         <table>
@@ -45,6 +50,28 @@ export default function Overview() {
               <tr key={r.实例编号} className="row-residual">
                 <td>{r.实例编号}</td><td>{r.应用}</td><td>{r.环境}</td>
                 <td>{r.版本}</td><td>{r.健康}</td><td>{r.归属发版单}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2>回滚缺口桶（与对账同源，四源同核）</h2>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th>发版单号</th><th>状态</th><th>残留旁读</th><th>在跑旧版本</th><th>退役标缺位</th><th>批次对照</th><th>审计重放矛盾</th><th>干净可宣称</th></tr>
+          </thead>
+          <tbody>
+            {(exposed.缺口明细 || []).length === 0 && (
+              <tr><td colSpan="8" className="muted">无回滚缺口</td></tr>
+            )}
+            {(exposed.缺口明细 || []).map((g) => (
+              <tr key={g.发版单编号} className={g.干净可宣称 ? '' : 'row-residual'}>
+                <td>{g.发版单号}</td><td>{g.发版单状态}</td><td>{g.残留旁读}</td>
+                <td>{g.在跑旧版本数}</td><td>{g.退役标缺位}</td>
+                <td>{g.批次对照一致 ? '一致' : '不符'}</td><td>{g.审计重放矛盾}</td>
+                <td>{g.干净可宣称 ? '可宣称' : '否'}</td>
               </tr>
             ))}
           </tbody>

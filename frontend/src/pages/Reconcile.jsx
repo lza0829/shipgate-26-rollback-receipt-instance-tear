@@ -27,6 +27,9 @@ export default function Reconcile() {
         <div className={`stat${data.已回滚仍有残留单数 === 0 ? ' stat-ok' : ' stat-danger'}`}>
           <div className="n">{data.已回滚仍有残留单数}</div><div className="l">已回滚仍有残留(须0)</div>
         </div>
+        <div className={`stat${(data.假干净单数 || 0) === 0 ? ' stat-ok' : ' stat-danger'}`}>
+          <div className="n">{data.假干净单数 || 0}</div><div className="l">假干净单数(须0)</div>
+        </div>
       </div>
 
       <h2>名册与实例（账实口径）</h2>
@@ -62,6 +65,27 @@ export default function Reconcile() {
                 <td>{b.发版单号}</td><td>{b.应用}</td><td>{b.环境}</td>
                 <td>{b.发版单状态}</td><td>{b.回退目标版本}</td>
                 <td>{b.残留实例数}</td><td>{b.残留版本与探针}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <h2>回滚缺口桶（残留旁读∪退役标∪批次对照∪审计重放，四源同核）</h2>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th>发版单号</th><th>状态</th><th>残留旁读</th><th>在跑旧版本</th><th>退役标缺位</th><th>批次对照</th><th>审计重放矛盾</th><th>干净可宣称</th></tr>
+          </thead>
+          <tbody>
+            {(data.回滚缺口桶 || []).length === 0 && (
+              <tr><td colSpan="8" className="muted">无回滚缺口</td></tr>
+            )}
+            {(data.回滚缺口桶 || []).map((g) => (
+              <tr key={g.发版单编号} className={g.干净可宣称 ? '' : 'row-residual'}>
+                <td>{g.发版单号}</td><td>{g.发版单状态}</td><td>{g.残留旁读}</td>
+                <td>{g.在跑旧版本数}</td><td>{g.退役标缺位}</td>
+                <td>{g.批次对照一致 ? '一致' : '不符'}</td><td>{g.审计重放矛盾}</td>
+                <td>{g.干净可宣称 ? '可宣称' : '假干净'}</td>
               </tr>
             ))}
           </tbody>

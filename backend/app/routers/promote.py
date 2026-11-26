@@ -75,5 +75,7 @@ def promote(release_id: int, body: PromoteIn):
         )
         set_app_env_version(conn, r["app_id"], to_env["id"], r["target_version"])
         upsert_instance(conn, r["app_id"], to_env["id"], r["target_version"], "探针绿", release_id)
+        # 跨环旁读：晋升只动目标环境，不得顺手把其它环境里别的单子的回退残留/退役标抹掉
+        # （旧实现会在此处联动旧包实例，造成回滚半截被晋升“洗白”，这里显式隔开）
         audit(conn, "晋升", release_id, f"晋升到{body.目标环境}", body.备注)
         return row_to_dict(get_release(conn, release_id))

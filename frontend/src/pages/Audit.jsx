@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api'
 
-const surface_panel = true
 export default function Audit() {
   const [rows, setRows] = useState([])
   const [err, setErr] = useState('')
@@ -13,10 +12,13 @@ export default function Audit() {
       {err && <p className="err">{err}</p>}
       <div className="table-wrap">
         <table>
-          <thead><tr><th>时间</th><th>类别</th><th>动作</th><th>关联</th><th>备注</th></tr></thead>
+          <thead><tr><th>时间</th><th>类别</th><th>动作</th><th>关联</th><th>备注</th><th>重放校验</th><th>重放说明</th></tr></thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.编号}><td>{r.时间}</td><td>{r.类别}</td><td>{r.动作}</td><td>{r.关联编号 || '-'}</td><td>{r.备注}</td></tr>
+              <tr key={r.编号} className={r.重放校验 === '假干净' ? 'row-residual' : ''}>
+                <td>{r.时间}</td><td>{r.类别}</td><td>{r.动作}</td><td>{r.关联编号 || '-'}</td><td>{r.备注}</td>
+                <td>{r.重放校验}</td><td>{r.重放说明}</td>
+              </tr>
             ))}
           </tbody>
         </table>

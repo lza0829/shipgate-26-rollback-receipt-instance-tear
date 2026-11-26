@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api'
 
-const surface_panel = true
 export default function Health() {
   const [rows, setRows] = useState([])
   const [err, setErr] = useState('')
@@ -21,7 +20,10 @@ export default function Health() {
     setErr(''); setMsg('')
     try {
       const r = await api(`/实例/${id}/清理残留`, { method: 'POST' })
-      setMsg(`已清理实例 ${id}，发版单状态：${r.发版单.状态}`)
+      const st = r.发版单.状态
+      setMsg(st === '已回滚'
+        ? `已清理实例 ${id} 并收敛：发版单 ${r.发版单.发版单号} 已回滚`
+        : `已清理实例 ${id}，但发版单 ${r.发版单.发版单号} 仍停在${st}：旧实例仍在跑/退役标缺位，不得宣称干净`)
       load()
     } catch (e) { setErr(e.message) }
   }
@@ -37,7 +39,7 @@ export default function Health() {
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>应用</th><th>环境</th><th>版本</th><th>健康</th><th>发版单</th><th>是否残留</th><th>残留归属</th><th>操作</th></tr>
+            <tr><th>应用</th><th>环境</th><th>版本</th><th>健康</th><th>发版单</th><th>是否残留</th><th>残留归属</th><th>退役标</th><th>操作</th></tr>
           </thead>
           <tbody>
             {rows.map((r) => (
@@ -46,6 +48,7 @@ export default function Health() {
                 <td>{r.发版单编号 || '-'}</td>
                 <td>{r.是否残留}</td>
                 <td>{r.残留归属发版单 || '-'}</td>
+                <td>{r.退役标}</td>
                 <td>
                   <button type="button" onClick={() => setH(r.编号, '探针绿')}>探针绿</button>{' '}
                   <button type="button" className="danger" onClick={() => setH(r.编号, '探针红')}>探针红</button>{' '}

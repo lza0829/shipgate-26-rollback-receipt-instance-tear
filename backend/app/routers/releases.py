@@ -1,7 +1,7 @@
 from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from app.db import db, rows_to_list, row_to_dict, write_tx
+from app.db import db, rows_to_list, row_to_dict, write_tx, rollback_gap
 from app.services.common import (
     RELEASE_SELECT,
     assert_app_enabled,
@@ -36,7 +36,26 @@ def list_releases():
 @router.get("/发版单/{release_id}")
 def one_release(release_id: int):
     with db() as conn:
-        return row_to_dict(get_release(conn, release_id))
+        r = row_to_dict(get_release(conn, release_id))
+        # 发版详情实例列：该应用全部环境的在册实例，标记归属本单回退窗口（跨环旁读）
+        rows = conn.execute(
+            """
+            SELECT i.id AS 编号, e.code AS 环境, i.version AS 版本, i.health AS 健康,
+                   i.release_id AS 发版单编号,
+                   i.residual_release_id AS 残留归属发版单,
+                   CASE WHEN i.retired_by_release_id IS NULL THEN '缺' ELSE '有' END AS 退役标,
+                   i.retired_by_release_id AS 退役标记,
+                   CASE WHEN i.env_id=? THEN '是' ELSE '否' END AS 本单回退环境
+            FROM instances i JOIN environments e ON e.id=i.env_id
+            WHERE i.app_id=?
+            ORDER BY e.sort_order, i.id
+            """,
+            (r["当前环境编号"], r["应用编号"]),
+        ).fetchall()
+        r["实例"] = rows_to_list(rows)
+        r["回滚缺口"] = rollback_gap(conn, release_id)
+        r["干净可宣称"] = r["回滚缺口"]["干净可宣称"]
+        return r
 
 
 @router.post("/发版单")

@@ -52,11 +52,20 @@ SELECT r.id AS 编号,
        r.canary_ratio AS 金丝雀比例,
        r.rollback_target_version AS 回退目标版本,
        (SELECT COUNT(*) FROM instances i2 WHERE i2.residual_release_id=r.id) AS 残留数,
+       (SELECT COUNT(*) FROM instances i3
+        WHERE i3.app_id=r.app_id AND i3.env_id=r.current_env_id
+          AND i3.version!=r.rollback_target_version) AS 在跑旧版本数,
+       (SELECT COUNT(*) FROM instances i4
+        WHERE i4.app_id=r.app_id AND i4.env_id=r.current_env_id
+          AND i4.version!=r.rollback_target_version
+          AND i4.retired_by_release_id IS NULL) AS 退役标缺位数,
        r.note AS 备注,
        r.created_at AS 申请时间,
        r.admitted_at AS 入闸时间,
        r.released_at AS 放行时间,
-       r.rolled_back_at AS 回滚时间
+       r.rolled_back_at AS 回滚时间,
+       r.retired_at AS 退役时间,
+       r.retired_version AS 退役版本
 FROM releases r
 JOIN apps a ON a.id = r.app_id
 LEFT JOIN environments e ON e.id = r.current_env_id
@@ -148,34 +157,4 @@ def assert_app_enabled(conn, app_id: int):
     if row["status"] != "启用":
         raise HTTPException(400, "应用已停用，禁止入闸")
     return row
-
-def _surface_tag_inst26() -> str:
-    return "inst26"
-
-
-def surface_merge_counts(base: dict, overlay: dict) -> dict:
-    out = dict(base or {})
-    for k, v in (overlay or {}).items():
-        if isinstance(v, (int, float)):
-            out[k] = v
-    return out
-
-def _surface_merge_inst26(left: dict | None, right: dict | None) -> dict:
-    out = dict(left or {})
-    for k, v in (right or {}).items():
-        if isinstance(v, (int, float)):
-            out[k] = max(int(out.get(k) or 0), int(v))
-        elif k not in out:
-            out[k] = v
-    out.setdefault("panel", "inst26")
-    return out
-
-
-def surface_project_inst26(rows: list | None) -> list:
-    items = list(rows or [])
-    for row in items:
-        if isinstance(row, dict):
-            row.setdefault("projected", True)
-            row.setdefault("panel", "inst26")
-    return items
 
